@@ -1,0 +1,100 @@
+Google cloud platform建立laravel環境
+
+Google cloud系統設定
+作業系統：Ubuntu 18.04
+區域：us-east1-b
+機器類型：g1-small (1 個 vCPU，1.7 GB 記憶體)
+
+系統更新
+1.	sudo apt update
+2.	sudo apt upgrade
+3.	sudo apt install software-properties-common
+
+安裝Apache2
+4.	sudo apt install apache2
+
+安裝MySQL
+5.	sudo apt install mysql-server
+設定MySQL的root密碼
+6.	sudo mysql -u root mysql
+進入MySQL的Shell
+7.	UPDATE user SET plugin='mysql_native_password' WHERE User='root';
+8.	FLUSH PRIVILEGES;   (重新載入特權表)
+輸入以下指令執行更改root密碼
+9.	sudo mysql_secure_installation
+開啟「VALIDATE PASSWORD」插件，可以幫助我們檢查root密碼的安全性，避免被設置得太簡單而有安全上的疑慮。輸入「y」，同意啟用「VALIDATE PASSWORD」插件，接著要決定密碼的複雜度，「0」、「1」、「2」
+
+安裝phpmyadmin
+10.	sudo apt install phpmyadmin
+編輯 apache2 的 configuration file
+sudo nano /etc/apache2/apache2.conf
+最後一行加入以下指令
+Include /etc/phpmyadmin/apache.conf
+存檔後，接著重啟 apache
+sudo service apache2 restart
+
+安裝 PHP
+新增 ppa 來源
+11.	sudo apt-add-repository ppa:ondrej/php
+12.	sudo apt update
+
+安裝 PHP 及相關擴充
+13.	sudo apt install php7.2 php7.2-common php7.2-cli php7.2-curl php7.2-gd php7.2-json php7.2-dev php7.2-pgsql php7.2-sqlite3 php7.2-gd php7.2-curl php7.2-memcached php7.2-imap php7.2-mysql php7.2-mbstring php7.2-xml php7.2-zip php7.2-bcmath php7.2-soap php7.2-intl php7.2-readline
+
+安裝 Apache 的 PHP 模組
+14.	sudo apt install libapache2-mod-php7.2
+
+下載/安裝 Composer
+15.	https://getcomposer.org/download/
+把 composer.phar 變成全域指令
+16.	sudo mv composer.phar /usr/local/bin/composer
+
+安裝 laravel
+17.	composer global require "laravel/installer"
+修改環境變數
+18.	nano ~/.bashrc
+在最下面加上
+alias laravel='/usr/local/bin/composer' 
+執行環境變數	
+19.	source ~/.bashrc
+測試 export 指令有沒有成功
+20.	laravel -v
+
+Ubuntu新增虛擬記憶體
+21.	sudo fallocate -l 2G /swapfile
+22.	sudo chmod 600 /swapfile
+23.	sudo mkswap /swapfile
+24.	sudo swapon /swapfile
+25.	sudo nano /etc/fstab
+開啟檔案，到最後加入此行
+/swapfile   none swap    sw 0 0
+
+建立專案
+把 project folder 放到 /var/www/html中
+26.	cd /var/www/html
+27.	sudo mkdir projects
+28.	cd projects
+29.	composer create-project --prefer-dist laravel/laravel [project_name]
+把資料夾權限開大
+30.	cd [your project folder] 
+31.	chmod -R 777 storage
+32.	chmod -R 777 bootstrap/cache
+新增一個 laravel 使用的 apache conf
+33.	sudo nano /etc/apache2/sites-available/laravel.conf
+<VirtualHost *:80>
+    ServerName localhost
+    ServerAdmin webmaster@localhost
+    DocumentRoot /var/www/html/projects/smartmeter/public
+    <Directory /var/www/html/projects/smartmeter >
+        AllowOverride All
+    </Directory>
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>
+啟用 laravel.conf 的設定，並重新啟動 apache
+34.	sudo a2dissite 000-default.conf
+35.	sudo a2ensite laravel.conf
+36.	sudo a2enmod rewrite
+37.	sudo service apache2 restart
+建置完成
+ 
